@@ -12,20 +12,25 @@ class CategoriesSerializer(serializers.ModelSerializer):
 class TechnologiesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Technologies
-        fields = '__all__'
+        fields = ['name', 'popularity']
 
 # Serializer for Authors
 class AuthorsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Authors
-        fields = ['name','email', 'linkedin_url', 'github_url']
-
-        
-# Serializer for Audiences
-class AudiencesSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Audiences
         fields = '__all__'
+        extra_kwargs = {
+            'slug': {'required': False},
+            'email': {'required': False},
+            'linkedin_url': {'required': False},
+            'github_url': {'required': False},
+            'linkedin_url': {'required': False},
+            'avatar_url': {'required': False},
+            'bio_url': {'required': False},
+            'role': {'required': False},
+            'bio': {'required': False},
+        }
+
 
 # Serializer for Updates
 class UpdatesSerializer(serializers.ModelSerializer):
@@ -70,11 +75,12 @@ class ProjectsSerializer(serializers.ModelSerializer):
         model = Projects
         fields = '__all__'
         extra_kwargs = {
-            'name': {'required': True},
-            'slug': {'required': False},
             'logo_url': {'required': False},
             'cover_url': {'required': False},
+            'description': {'required': False},
             'short_description': {'required': False},
+            'stage': {'required': False},
+            'needs': {'required': False},
             'email': {'required': False},
             'website_url': {'required': False},
             'github_url': {'required': False},

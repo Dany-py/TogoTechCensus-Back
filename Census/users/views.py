@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from .models import Users
 from .serializers import UserSerializer
+from rest_framework import viewsets, permissions, status
+
 
 
 # View for the Users model
@@ -29,12 +31,19 @@ class UserView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
-                
+
+    permission_classes = [permissions.IsAuthenticated]         
     def get(self, request, pk=None):
+
         if pk:
             user = get_object_or_404(Users, id=pk)
             serializer = UserSerializer(user)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        users = Users.objects.all()
-        serializer = UserSerializer(users, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+        user = request.user
+        if user.is_authenticated:
+            user_data = get_object_or_404(Users, id=user.pk)
+            serializer = UserSerializer(user_data)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response({"Detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
