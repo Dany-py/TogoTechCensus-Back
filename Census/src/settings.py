@@ -145,11 +145,33 @@ TEMPLATES = [
 # CHANNELS (WebSockets / Redis)
 # =============================================================================
 
+_REDIS_URL      = os.getenv('REDIS_URL')
+_REDIS_HOST     = os.getenv('REDIS_HOST', '127.0.0.1')
+_REDIS_PORT     = int(os.getenv('REDIS_PORT', 6379))
+_REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
+
+if _REDIS_URL:
+    # Redis managé (Upstash, Redis Cloud, Railway…) avec URL complète + TLS
+    _redis_hosts = [_REDIS_URL]
+elif _REDIS_PASSWORD:
+    # Redis auto-hébergé avec mot de passe
+    _redis_hosts = [{
+        'host':     _REDIS_HOST,
+        'port':     _REDIS_PORT,
+        'password': _REDIS_PASSWORD,
+        'ssl':      PYTHON_ENV == 'production',   # TLS si prod
+    }]
+else:
+    # Redis local sans auth (dev)
+    _redis_hosts = [(_REDIS_HOST, _REDIS_PORT)]
+
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
+            'hosts':    _redis_hosts,
+            'capacity': 1500,       # nb max de messages en attente par groupe
+            'expiry':   60,         # TTL des messages (secondes)
         },
     },
 }
