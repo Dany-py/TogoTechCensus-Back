@@ -41,7 +41,7 @@ DEBUG = False
 
 PYTHON_ENV = os.getenv('PYTHON_ENV')
 
-ALLOWED_HOSTS = ['.localhost', '127.0.0.1', '[::1]']
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1, localhost").split(", ")
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
