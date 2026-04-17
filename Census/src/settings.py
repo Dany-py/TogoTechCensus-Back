@@ -55,7 +55,7 @@ ASGI_APPLICATION = 'src.asgi.application'
 # SESSION & CSRF
 # =============================================================================
 
-SESSION_COOKIE_NAME = 'X-CSRFToken'
+SESSION_COOKIE_NAME = 'sessionid'
 SESSION_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_HTTPONLY = False
 SESSION_COOKIE_SECURE = PYTHON_ENV == 'production'  # True en prod uniquement
