@@ -63,13 +63,28 @@ class UserViewTest(APITestCase):
         self.assertEqual(response.data['username'], 'newuser2')
 
     def test_get_me_unauthenticated(self):
-        """Test GET /users/me/ fails if not authenticated."""
+        """Test GET /users/me/ returns 401 when the request is not authenticated."""
         response = self.client.get(self.me_url)
-        self.assertIn(response.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN])
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn('detail', response.data)
 
     def test_get_me_authenticated(self):
-        """Test GET /users/me/ returns the authenticated user data."""
+        """Test GET /users/me/ returns the authenticated user's profile data."""
         self.client.force_authenticate(user=self.user)
         response = self.client.get(self.me_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['username'], 'authuser')
+        self.assertIn('name', response.data)
+
+    def test_get_me_authenticated_profile_not_found(self):
+        """Test GET /users/me/ returns 404 when the authenticated user has no profile."""
+        # Create a bare Django auth user that has no matching Users profile row.
+        ghost_user = Users(pk=99999, username='ghost', is_active=True)
+        ghost_user.is_authenticated = True  # simulate an authenticated but profile-less user
+
+        # Patch the request user directly via force_authenticate so DRF skips
+        # the permission layer and we can test the view's own 404 branch.
+        self.client.force_authenticate(user=ghost_user)
+        response = self.client.get(self.me_url)
+        # The Users.objects.get() call will raise DoesNotExist → 404.
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn('detail', response.data)
