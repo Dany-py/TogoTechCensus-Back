@@ -41,7 +41,7 @@ DEBUG = False
 
 PYTHON_ENV = os.getenv('PYTHON_ENV')
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1, localhost").split(", ")
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1, localhost").split(", ") if PYTHON_ENV == 'production' else ['*']
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

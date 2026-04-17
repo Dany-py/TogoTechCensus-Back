@@ -32,7 +32,6 @@ class UserView(APIView):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    permission_classes = [permissions.IsAuthenticated]         
     def get(self, request, pk=None):
 
         if pk:
