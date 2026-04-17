@@ -10,6 +10,7 @@ from rest_framework import viewsets, permissions, status
 
 # View for the Users model
 class UserView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         serializer = UserSerializer(data=request.data)
@@ -32,7 +33,6 @@ class UserView(APIView):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    permission_classes = [permissions.IsAuthenticated]         
     def get(self, request, pk=None):
 
         if pk:
