@@ -56,12 +56,12 @@ ASGI_APPLICATION = 'src.asgi.application'
 # =============================================================================
 
 SESSION_COOKIE_NAME = 'sessionid'
-SESSION_COOKIE_SAMESITE = 'Lax'
-SESSION_COOKIE_HTTPONLY = False
+SESSION_COOKIE_SAMESITE = 'None' if PYTHON_ENV == 'production' else 'Lax'
+SESSION_COOKIE_HTTPONLY = PYTHON_ENV == 'production'
 SESSION_COOKIE_SECURE = PYTHON_ENV == 'production'  # True en prod uniquement
 
-CSRF_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_SECURE = False
+CSRF_COOKIE_SAMESITE = 'None' if PYTHON_ENV == 'production' else 'Lax'
+CSRF_COOKIE_SECURE = PYTHON_ENV == 'production'
 CSRF_COOKIE_HTTPONLY = False
 
 CSRF_TRUSTED_ORIGINS = [
