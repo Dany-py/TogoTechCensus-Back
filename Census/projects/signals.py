@@ -42,9 +42,6 @@ def post_save_project( instance, created, **kwargs ):
         print("User not authenticated !")
         return
     
-    if instance.authors:
-        print(f'-'*60)
-        print('Authors :', instance.authors.all())
     try:
         updates = {}
 
@@ -103,7 +100,7 @@ def post_save_project( instance, created, **kwargs ):
             # Mise à jour - optionnel selon ta logique métier
             notification = NotificationService.create_notification(
                 recipient=user,
-                notification_type='project_update',
+                notification_type='project_updated',
                 title="Your project update has been registered",
                 message=f"Your project '{instance.name}' update has been successfully registered",
             )
