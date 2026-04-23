@@ -38,12 +38,12 @@ class UnAuthenticateProjectView(APIView):
             slug = slugify(name)
             project = projects.filter(slug__icontains=slug)
 
-            paginator = ProjectPagination()
-            page = paginator.paginate_queryset(project, request)
+            #paginator = ProjectPagination()
+            #page = paginator.paginate_queryset(project, request)
         
-            if page is not None:
-                serializer = ProjectsSerializer(page, many=True)
-                return paginator.get_paginated_response(serializer.data)
+            #if page is not None:
+                #serializer = ProjectsSerializer(page, many=True)
+                #return paginator.get_paginated_response(serializer.data)
         
             serializer = ProjectsSerializer(project, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
