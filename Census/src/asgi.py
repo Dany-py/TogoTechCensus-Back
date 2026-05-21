@@ -13,8 +13,12 @@ import sys
 # IMPORTANT: Définir DJANGO_SETTINGS_MODULE AVANT tous les imports Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'src.settings')
 
+from whitenoise import WhiteNoise
+
+
 from django.core.asgi import get_asgi_application
 django_asgi_app = get_asgi_application()
+application = WhiteNoise(django_asgi_app, root='staticfiles/')
 
 # --- Vérification Redis au démarrage ---
 import redis as _redis

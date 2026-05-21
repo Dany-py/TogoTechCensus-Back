@@ -13,7 +13,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--host', default=os.getenv('SERVER_HOST', '127.0.0.1'))
         parser.add_argument('--port', type=int, default=int(os.getenv('SERVER_PORT', 8000)))
-        parser.add_argument('--reload', action='store_true', default=False)
+        parser.add_argument('--reload', action='store_true', default= os.getenv('PYTHON_ENV') == 'development')
 
     def db_init(self):
         count = Projects.objects.filter(is_verified=True).aggregate(
@@ -32,6 +32,7 @@ class Command(BaseCommand):
         call_command('create_admin')
         uvicorn.run(
             'src.asgi:application',
+            lifespan='off',
             host=options['host'],
             port=options['port'],
             reload=options['reload'],
