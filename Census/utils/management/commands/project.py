@@ -6,6 +6,24 @@ from datetime import datetime
 import random
 import asyncio
 
+import subprocess
+
+try:
+    # Exécute la commande et lève une exception si elle échoue (code de retour différent de 0)
+    result = subprocess.run(
+        ["echo", "Bonjour depuis le CLI"], 
+        check=True, 
+        capture_output=True, 
+        text=True
+    )
+    
+    # On récupère ce que la commande a écrit dans le terminal
+    print("Sortie du CLI :", result.stdout)
+
+except subprocess.CalledProcessError as e:
+    print(f"La commande a échoué avec le code {e.returncode}")
+    print("Erreur :", e.stderr)
+
 class Command(BaseCommand):
     help = 'Insère les données de la table project.'
 
