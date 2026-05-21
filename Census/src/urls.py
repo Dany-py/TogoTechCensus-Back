@@ -23,12 +23,12 @@ from .views import get_csrf_token
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/csrf/', get_csrf_token, name='get_csrf_token'),
-    path('api/auth/', include('social_django.urls', namespace='social')),
-    path('api/users/', include('users.urls', namespace='user')),
-    path('api/projects/', include('projects.urls', namespace='project')),
-    path('api/notification/', include('notification.urls', namespace='notification'))
+    path('api/v1/admin/', admin.site.urls),
+    path('api/v1/csrf/', get_csrf_token, name='get_csrf_token'),
+    path('api/v1/auth/', include('social_django.urls', namespace='social')),
+    path('api/v1/users/', include('users.urls', namespace='user')),
+    path('api/v1/projects/', include('projects.urls', namespace='project')),
+    path('api/v1/notification/', include('notification.urls', namespace='notification'))
 ]
 
 if settings.DEBUG:
