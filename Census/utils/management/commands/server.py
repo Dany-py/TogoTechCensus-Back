@@ -5,6 +5,9 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db.models import Count
 from projects.models import Projects
+from sched import scheduler
+import httpx
+import time
 
 MIN_PROJECT_COUNT = 92
 
@@ -34,11 +37,44 @@ class Command(BaseCommand):
             self.stdout.write("Collecting static files...")
             call_command('collectstatic', interactive=False)
             self.stdout.write(self.style.SUCCESS("Static files collected."))
+            
+    def revival_front(self):
+        try:
+            response = httpx.get('https://togotechcensus-dev.up.railway.app/')
+            if response.status_code != 200:
+                self.revival_front()
+        except Exception as e:
+            print(f'Error occured : {e}')
+        finally:
+            self.frontend_job_schedule()
 
+    def frontend_job_schedule(self):
+        temps_actuel = time.localtime()
+        jour_semaine = temps_actuel.tm_wday
+        heure_actuelle = temps_actuel.tm_hour
+
+        frontSched = scheduler(time.time, time.sleep)
+        url = os.getenv('FRONTEND').split('.')
+
+        if 'railway' | 'app' in url:
+            if jour_semaine < 5 and 7 <= heure_actuelle < 19:
+                interval = 10 * 60
+                frontSched.enter(
+                    delay=interval,
+                    priority=1,
+                    action=self.revival_front
+                )
+                frontSched.run()
+            else:
+                print(f"Hors plage horaire — pas de ping (jour={jour_semaine}, heure={heure_actuelle}h)")
+        else:
+            print(f"L'URL frontend n'est pas hébergée sur Railway, pas de revival nécessaire.")
+            
     def handle(self, *args, **options):
         self.db_init()
         call_command('create_admin')
-        self.collect_staticfiles()   # ← parenthèses !
+        self.collect_staticfiles()
+        self.frontend_job_schedule()
         uvicorn.run(
             'src.asgi:application',
             lifespan='off',
