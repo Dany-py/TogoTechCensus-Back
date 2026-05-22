@@ -56,7 +56,7 @@ class Command(BaseCommand):
         frontSched = scheduler(time.time, time.sleep)
         url = os.getenv('FRONTEND_URL').split('.')
 
-        if 'railway' | 'app' in url:
+        if 'railway' or 'app' in url:
             if jour_semaine < 5 and 7 <= heure_actuelle < 19:
                 interval = 10 * 60
                 frontSched.enter(
