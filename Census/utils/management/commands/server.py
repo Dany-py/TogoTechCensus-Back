@@ -8,6 +8,7 @@ from projects.models import Projects
 from sched import scheduler
 import httpx
 import time
+import threading
 
 MIN_PROJECT_COUNT = 92
 
@@ -56,7 +57,7 @@ class Command(BaseCommand):
         frontSched = scheduler(time.time, time.sleep)
         url = os.getenv('FRONTEND_URL').split('.')
 
-        if 'railway' or 'app' in url:
+        if 'railway' in url or 'app' in url:
             if jour_semaine < 5 and 7 <= heure_actuelle < 19:
                 interval = 10 * 60
                 frontSched.enter(
@@ -64,7 +65,8 @@ class Command(BaseCommand):
                     priority=1,
                     action=self.revival_front
                 )
-                frontSched.run()
+                thread = threading.Thread(target=frontSched.run, daemon=True)
+                thread.start()
             else:
                 print(f"Hors plage horaire — pas de ping (jour={jour_semaine}, heure={heure_actuelle}h)")
         else:
