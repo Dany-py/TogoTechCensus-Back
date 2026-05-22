@@ -54,7 +54,7 @@ class Command(BaseCommand):
         heure_actuelle = temps_actuel.tm_hour
 
         frontSched = scheduler(time.time, time.sleep)
-        url = os.getenv('FRONTEND').split('.')
+        url = os.getenv('FRONTEND_URL').split('.')
 
         if 'railway' | 'app' in url:
             if jour_semaine < 5 and 7 <= heure_actuelle < 19:
