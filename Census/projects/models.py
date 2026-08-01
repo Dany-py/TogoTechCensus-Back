@@ -5,36 +5,26 @@ from django.utils.translation import gettext_lazy as _
 # Create your models here.
 class Projects(models.Model):
     # Identification
-
-    class Type(models.TextChoices):
-        ACCELERATOR  = 'ACC', _('accelerator'),
-        OPENSOURCE = 'OS', _('open source'),
-        ENTERPRISE = 'ENT', _('entreprise'),
-        COMMUNITY = 'COM', _('community'),
-        INCUBATOR = 'INC', _('incubator'),
-        ONG = 'ONG', _('organisation'),
-        STARTUP = 'STP', _('startup'),
-        HUB = 'HUB', _('hub')
     
     class Stage(models.TextChoices):
-        EARLY = 'EA', _('early'),
-        GROWTH = 'GR', _('growth'),
-        MATURITY = 'MA', _('maturity')
+        EARLY = 'Early', _('early'),
+        GROWTH = 'Growth', _('growth'),
+        MATURITY = 'Maturity', _('maturity')
+        EARGROW = 'Early/Growth', _('early/growth')
 
     name = models.CharField(max_length=200, unique=True, db_index=True)
-    slug = models.SlugField(max_length=100, unique=True)  # URLField → SlugField
+    slug = models.SlugField(max_length=100, unique=True, db_index=True, null=True, blank=True)  # URLField → SlugField
 
     # General information
     description = models.TextField()
     short_description = models.CharField(max_length=300)
-    logo_url = models.ImageField(upload_to='media/', blank=True, null=True)
-    cover_image_url = models.ImageField(upload_to='media/', blank=True, null=True)
+    logo_url = models.CharField(max_length=300, blank=True, null=True)
     
     # Classification
     type = models.CharField(max_length=100, null=True, db_index=True)
-    #status = models.CharField(max_length=50, db_index=True)
     stage = models.CharField(max_length=100, default=Stage.EARLY, db_index=True)
     needs = models.CharField(max_length=100, db_index=True)
+    audiences = models.CharField(max_length=100, db_index=True, blank=True)
     
     # Contact
     website_url = models.URLField(max_length=500, blank=True)
@@ -56,12 +46,13 @@ class Projects(models.Model):
 
     # Metrics
     view_count = models.IntegerField(default=0)
-    likes_count = models.IntegerField(default=0)
+    artificial_view = models.IntegerField(default=0)
 
     # Moderation
     is_verified = models.BooleanField(default=False, db_index=True)
+    is_archived = models.BooleanField(default=False, db_index=True)
+    is_deleted = models.BooleanField(default=False, db_index=True)
     verified_at = models.DateTimeField(null=True, blank=True)
-    #is_featured = models.BooleanField(default=False)
 
     # Metadata
     metadata = models.JSONField(default=dict, blank=True)
@@ -69,9 +60,9 @@ class Projects(models.Model):
     user = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='user_project', null=True)
 
     # Relations many-to-many
-    categories = models.ManyToManyField('Categories', through='ProjectCategory', related_name='projects')
-    technologies = models.ManyToManyField('Technologies', through='ProjectTechnology', related_name='projects')
-    authors = models.ManyToManyField('Authors', through='ProjectAuthor', related_name='projects')
+    categories = models.ManyToManyField('Categories', through='ProjectCategory', related_name='projects', db_index=True)
+    technologies = models.ManyToManyField('Technologies', through='ProjectTechnology', related_name='projects', db_index=True)
+    authors = models.ManyToManyField('Authors', through='ProjectAuthor', related_name='projects', db_index=True)
 
     class Meta:
         app_label = 'projects'
@@ -84,7 +75,7 @@ class Projects(models.Model):
 
 
 class Categories(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100, unique=True, db_index=True)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -113,10 +104,8 @@ class ProjectCategory(models.Model):
 
 
 class Technologies(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    slug = models.SlugField(max_length=100, unique=True)
-    type = models.CharField(max_length=50)
-    logo_url = models.ImageField(upload_to='tech_logos/', blank=True)
+    name = models.CharField(max_length=100, unique=True, db_index=True)
+    slug = models.SlugField(max_length=100, unique=True, db_index=True)
     popularity = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -146,8 +135,8 @@ class ProjectTechnology(models.Model):
 
 
 class Authors(models.Model):
-    name = models.CharField(max_length=200)
-    slug = models.SlugField(max_length=250)
+    name = models.CharField(max_length=200, db_index=True)
+    slug = models.SlugField(max_length=250, db_index=True)
     email = models.EmailField(max_length=200, blank=True)
     github_url = models.URLField(max_length=500, blank=True)
     linkedin_url = models.URLField(max_length=500, blank=True)
@@ -182,19 +171,34 @@ class ProjectAuthor(models.Model):
         return f"{self.author.name} - {self.project.name}"
 
 
-class Audiences(models.Model):
+"""class Audiences(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-    project = models.ForeignKey(Projects, on_delete=models.CASCADE, related_name='audiences')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = 'Audience'
         verbose_name_plural = 'Audiences'
-        unique_together = [['project', 'name']]
 
     def __str__(self):
-        return f"{self.project.name} - {self.name}"
+        return self.name"""
+
+
+"""class ProjectAudiences(models.Model):
+    #Table intermédiaire pour la relation Projects-Audiences
+    pass
+    project = models.ForeignKey(Projects, on_delete=models.CASCADE)
+    audience = models.ForeignKey(Audiences, on_delete=models.CASCADE)
+    is_primary = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [['project', 'audience']]
+        verbose_name = 'Project Audience'
+        verbose_name_plural = 'Project Audiences'
+
+    def __str__(self):"""
+        #return f"{self.project.name} - {self.audience.name}"
 
 
 class Updates(models.Model):
@@ -225,7 +229,7 @@ class Submissions(models.Model):
     submitted_by = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='submitted_submissions')
     project = models.ForeignKey(Projects, on_delete=models.CASCADE, related_name='submissions')
     status = models.CharField(max_length=2, choices=Status, default=Status.PENDING, db_index=True)
-    reviewed_by = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='reviewed_submissions', db_index=True)
+    reviewed_by = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='reviewed_submissions', db_index=True, null=True)
     review_notes = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 

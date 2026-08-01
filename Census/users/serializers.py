@@ -6,7 +6,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Users
-        fields = '__all__'
+        fields = ['name', 'avatar_url', 'role']
         extra_kwargs = {
             'avatar_url': {'required': False}
         }

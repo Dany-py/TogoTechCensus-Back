@@ -35,6 +35,7 @@ Include/
 Lib/
 Scripts/
 pyvenv.cfg
+Census/staticfiles/
 
 # IDEs
 .vscode/

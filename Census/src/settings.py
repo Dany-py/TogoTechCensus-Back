@@ -9,21 +9,31 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
+
 import os
 from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+
+# =============================================================================
+# PATHS
+# =============================================================================
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Media files
-MEDIA_ROOT = BASE_DIR/'media'
+STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [] 
+
+MEDIA_ROOT = BASE_DIR / 'media'
 MEDIA_URL = '/media/'
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
+
+# =============================================================================
+# CORE SETTINGS
+# =============================================================================
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY')
@@ -31,17 +41,47 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['.localhost', '127.0.0.1', '[::1]']
-
-SESSION_COOKIE_HTTPONLY = True
-
 PYTHON_ENV = os.getenv('PYTHON_ENV')
 
-if(PYTHON_ENV == 'production'):
-    SESSION_COOKIE_SECURE = True
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1, localhost").split(", ") if PYTHON_ENV == 'production' else ['*']
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+ROOT_URLCONF = 'src.urls'
+
+# WSGI_APPLICATION = 'src.wsgi.application'
+ASGI_APPLICATION = 'src.asgi.application'
+
+
+# =============================================================================
+# SESSION & CSRF
+# =============================================================================
+
+SESSION_COOKIE_NAME = 'sessionid'
+SESSION_COOKIE_SAMESITE = 'None' if PYTHON_ENV == 'production' else 'Lax'
+SESSION_COOKIE_HTTPONLY = PYTHON_ENV == 'production'
+SESSION_COOKIE_SECURE = PYTHON_ENV == 'production'  # True en prod uniquement
+
+CSRF_COOKIE_SAMESITE = 'None' if PYTHON_ENV == 'production' else 'Lax'
+CSRF_COOKIE_SECURE = PYTHON_ENV == 'production'
+CSRF_COOKIE_HTTPONLY = False
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    os.getenv('FRONTEND_URL'),
+]
+
+# Railway termine le SSL au niveau du proxy
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+
+# =============================================================================
+# CORS
+# =============================================================================
 
 CORS_ALLOWED_ORIGINS = [
-    os.getenv('FRONTEND_URL')
+    os.getenv('FRONTEND_URL'),
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -50,24 +90,26 @@ CORS_ALLOW_HEADERS = [
     "content-type",
     "authorization",
     "x-auth-token",
-    "X-CSRFToken"
+    "X-CSRFToken",
 ]
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
 
-# Application definition
+# =============================================================================
+# APPLICATIONS
+# =============================================================================
 
 INSTALLED_APPS = [
+    # Applications locales
     'users',
     'projects',
+    'utils',
+    'notification',
+    # Bibliothèques tierces
     'social_django',
     'rest_framework',
     'corsheaders',
-    'utils', 
-    #'rest_framework_simplejwt',
+    'channels',
+    # Django built-ins
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -77,6 +119,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -85,9 +128,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'crum.CurrentRequestUserMiddleware',
 ]
-
-ROOT_URLCONF = 'src.urls'
 
 TEMPLATES = [
     {
@@ -104,35 +146,97 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'src.wsgi.application'
+
+# =============================================================================
+# CHANNELS (WebSockets / Redis)
+# =============================================================================
+
+_REDIS_URL      = os.getenv('REDIS_URL')
+_REDIS_HOST     = os.getenv('REDIS_HOST', '127.0.0.1')
+_REDIS_PORT     = int(os.getenv('REDIS_PORT', 6379))
+_REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
+
+if _REDIS_URL:
+    # Redis managé (Upstash, Redis Cloud, Railway…) avec URL complète + TLS
+    _redis_hosts = [_REDIS_URL]
+elif _REDIS_PASSWORD:
+    # Redis auto-hébergé avec mot de passe
+    _redis_hosts = [{
+        'host':     _REDIS_HOST,
+        'port':     _REDIS_PORT,
+        'password': _REDIS_PASSWORD,
+        'ssl':      PYTHON_ENV == 'production',   # TLS si prod
+    }]
+else:
+    # Redis local sans auth (dev)
+    _redis_hosts = [(_REDIS_HOST, _REDIS_PORT)]
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts':    _redis_hosts,
+            'capacity': 1500,       # nb max de messages en attente par groupe
+            'expiry':   60,         # TTL des messages (secondes)
+        },
+    },
+}
 
 
-# Database
+# =============================================================================
+# DATABASE
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
+# =============================================================================
 
 DATABASES = {
     'default': {
-        'ENGINE': os.getenv('ENGINE'),
-        'NAME':  os.getenv('NAME'),
-        'USER':  os.getenv('USER'),
-        'PASSWORD':  os.getenv('PASSWORD'),
-        'HOST':  os.getenv('HOST'),
-        'PORT':  os.getenv('PORT'),
+        'ENGINE':   os.getenv('ENGINE'),
+        'NAME':     os.getenv('NAME'),
+        'USER':     os.getenv('USER'),
+        'PASSWORD': os.getenv('PASSWORD'),
+        'HOST':     os.getenv('HOST'),
+        'PORT':     os.getenv('DB_PORT'),
     }
 }
-# Auth user config
+
+
+# =============================================================================
+# AUTHENTIFICATION
+# =============================================================================
+
 AUTH_USER_MODEL = 'users.Users'
 
-# OAuth-2 config
+AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+]
+
+
+# =============================================================================
+# OAUTH2 / SOCIAL AUTH
+# =============================================================================
+
 AUTHENTICATION_BACKENDS = (
     'social_core.backends.google.GoogleOAuth2',
     'social_core.backends.github.GithubOAuth2',
-    'django.contrib.auth.backends.ModelBackend',  # Keep for username/password login
+    'django.contrib.auth.backends.ModelBackend',  # Conservé pour le login classique
 )
 
-SOCIAL_AUTH_GITHUB_KEY = os.getenv('GITHUB_KEY')
-SOCIAL_AUTH_GITHUB_SECRET = os.getenv('GITHUB_SECRET')
+# Google OAuth2
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.getenv('GOOGLE_OAUTH2_KEY')
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv('GOOGLE_OAUTH2_SECRET')
+SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/userinfo.profile',
+]
 
+# GitHub OAuth2
+SOCIAL_AUTH_GITHUB_KEY = os.getenv('GITHUB_OAUTH2_ID')
+SOCIAL_AUTH_GITHUB_SECRET = os.getenv('GITHUB_OAUTH2_SECRET')
+
+# Pipeline social auth
 SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_details',
     'social_core.pipeline.social_auth.social_uid',
@@ -143,64 +247,59 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.associate_user',
     'social_core.pipeline.social_auth.load_extra_data',
     'social_core.pipeline.user.user_details',
-    'users.pipeline.save_user_profile',  # Notre pipeline personnalisée
+    'users.pipeline.save_user_profile',  # Pipeline personnalisée
 )
 
+# URLs de redirection
 LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = os.getenv('LOGOUT_REDIRECT_URL', '/')
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = os.getenv('SOCIAL_AUTH_LOGIN_REDIRECT_URL')
+SOCIAL_AUTH_LOGIN_ERROR_URL = os.getenv('SOCIAL_AUTH_LOGIN_ERROR_URL')
 
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.getenv('GOOGLE_OAUTH2_KEY')
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv('GOOGLE_OAUTH2_SECRET')
-SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
-    'https://www.googleapis.com/auth/userinfo.email',
-    'https://www.googleapis.com/auth/userinfo.profile',
-]
 
-SOCIAL_AUTH_GITHUB_KEY = os.getenv('GITHUB_OAUTH2_ID')
-SOCIAL_AUTH_GITHUB_SECRET = os.getenv('GITHUB_OAUTH2_SECRET')
+# =============================================================================
+# EMAIL
+# =============================================================================
 
-# Password validation
-# https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_PORT = os.getenv('EMAIL_PORT')
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = os.getenv('EMAIL_SENDER')
 
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
-]
 
-# Rest Framework attributes
+# =============================================================================
+# REST FRAMEWORK
+# =============================================================================
+
 REST_FRAMEWORK = {
     'TEST_REQUEST_DEFAULT_FORMAT': 'json',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
+    # Décommenter pour activer l'authentification JWT globalement :
+    # 'DEFAULT_PERMISSION_CLASSES': (
+    #     'rest_framework.permissions.IsAuthenticated',
+    # ),
+    # 'DEFAULT_AUTHENTICATION_CLASSES': (
+    #     'rest_framework_simplejwt.authentication.JWTAuthentication',
+    # ),
 }
 
-"""
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    ),
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
+# SIMPLE_JWT = {
+#     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+#     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+#     'SLIDING_TOKEN_LIFETIME': timedelta(days=30),
+#     'SLIDING_TOKEN_REFRESH_LIFETIME_LATE_USER': timedelta(days=1),
+#     'SLIDING_TOKEN_LIFETIME_LATE_USER': timedelta(days=30),
+# }
 
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
-    'SLIDING_TOKEN_LIFETIME': timedelta(days=30),
-    'SLIDING_TOKEN_REFRESH_LIFETIME_LATE_USER': timedelta(days=1),
-    'SLIDING_TOKEN_LIFETIME_LATE_USER': timedelta(days=30),
-}"""
-# Internationalization
+
+# =============================================================================
+# INTERNATIONALISATION
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
+# =============================================================================
 
 LANGUAGE_CODE = 'en-us'
 
@@ -209,17 +308,3 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/6.0/howto/static-files/
-
-STATIC_URL = 'static/'
-
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-SOCIAL_AUTH_LOGIN_REDIRECT_URL = os.getenv('SOCIAL_AUTH_LOGIN_REDIRECT_URL') 
-
-SOCIAL_AUTH_LOGIN_ERROR_URL = os.getenv('SOCIAL_AUTH_LOGIN_ERROR_URL')
-
-LOGOUT_REDIRECT_URL = os.getenv('LOGOUT_REDIRECT_URL')
