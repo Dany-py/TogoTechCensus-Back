@@ -86,6 +86,10 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_CREDENTIALS = True
 
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",
+]
+
 CORS_ALLOW_HEADERS = [
     "content-type",
     "authorization",
@@ -103,6 +107,7 @@ INSTALLED_APPS = [
     'users',
     'projects',
     'utils',
+    'chatbot',
     'notification',
     # Bibliothèques tierces
     'social_django',
@@ -129,6 +134,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'crum.CurrentRequestUserMiddleware',
+    'chatbot.middleware.AnonymousIDMiddleware',
 ]
 
 TEMPLATES = [
