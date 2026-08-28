@@ -23,7 +23,7 @@ from .views import get_csrf_token, home
 
 
 urlpatterns = [
-    path('/', home, name='Home'),
+    path('', home, name='home'),
     path('api/v1/admin/', admin.site.urls),
     path('api/v1/csrf/', get_csrf_token, name='get_csrf_token'),
     path('api/v1/auth/', include('social_django.urls', namespace='social')),
