@@ -62,7 +62,7 @@ application = ProtocolTypeRouter({
     "websocket": SessionMiddlewareStack(
         AuthMiddlewareStack(
             URLRouter(
-                notification.routing.websocket_urlpatterns #+ chatbot.routing.websocket_urlpatterns
+                notification.routing.websocket_urlpatterns
             )
         )
     ),
