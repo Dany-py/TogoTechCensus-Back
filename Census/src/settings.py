@@ -107,7 +107,7 @@ INSTALLED_APPS = [
     'users',
     'projects',
     'utils',
-    'chatbot',
+    #'chatbot',
     'notification',
     # Bibliothèques tierces
     'social_django',
