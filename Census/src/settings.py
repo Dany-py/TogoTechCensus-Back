@@ -134,7 +134,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'crum.CurrentRequestUserMiddleware',
-    'chatbot.middleware.AnonymousIDMiddleware',
+    #'chatbot.middleware.AnonymousIDMiddleware',
 ]
 
 TEMPLATES = [
