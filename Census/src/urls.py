@@ -27,6 +27,7 @@ urlpatterns = [
     path('api/v1/csrf/', get_csrf_token, name='get_csrf_token'),
     path('api/v1/auth/', include('social_django.urls', namespace='social')),
     path('api/v1/users/', include('users.urls', namespace='user')),
+    #path('api/v1/chatbot/', include('chatbot.urls', namespace='chatbot')),
     path('api/v1/projects/', include('projects.urls', namespace='project')),
     path('api/v1/notification/', include('notification.urls', namespace='notification'))
 ]

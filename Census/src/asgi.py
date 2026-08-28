@@ -54,6 +54,7 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 from channels.sessions import SessionMiddlewareStack
 import notification.routing
+#import chatbot.routing
 
 
 application = ProtocolTypeRouter({
