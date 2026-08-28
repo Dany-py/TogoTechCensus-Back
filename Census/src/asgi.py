@@ -54,7 +54,7 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 from channels.sessions import SessionMiddlewareStack
 import notification.routing
-import chatbot.routing
+#import chatbot.routing
 
 
 application = ProtocolTypeRouter({
@@ -62,7 +62,7 @@ application = ProtocolTypeRouter({
     "websocket": SessionMiddlewareStack(
         AuthMiddlewareStack(
             URLRouter(
-                notification.routing.websocket_urlpatterns + chatbot.routing.websocket_urlpatterns
+                notification.routing.websocket_urlpatterns #+ chatbot.routing.websocket_urlpatterns
             )
         )
     ),
