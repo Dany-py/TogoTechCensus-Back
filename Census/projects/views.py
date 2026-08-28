@@ -16,6 +16,7 @@ class ProjectPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
     max_page_size = 100
 
+
 # View for the Projects model
 
 class UnsafeSessionAuthentication(SessionAuthentication):
@@ -97,8 +98,7 @@ class UnAuthenticateProjectView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         
         paginator = ProjectPagination()
-        unsafeprojects = Projects.objects.filter(is_verified=True).exclude(type='open-source').order_by('created_at')
-        page = paginator.paginate_queryset(unsafeprojects, request)
+        page = paginator.paginate_queryset(projects, request)
         
         if page is not None:
             serializer = ProjectsSerializer(page, many=True)
@@ -147,6 +147,7 @@ class ProjectView(APIView):
         serializer = ProjectsSerializer(project, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
+
     def post(self, request):
         user = request.user
     
@@ -218,7 +219,7 @@ class ProjectView(APIView):
 
         except Exception as e:
             print(f"\n❌ Post View Error : {e}")
-            return Response({"detail": "Une erreur est survenue."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     
     def patch(self, request, id):
@@ -249,7 +250,7 @@ class ProjectView(APIView):
             return Response({"error": "Project not found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             print(f"\n❌ Erreur {e}")
-            return Response({"detail": "Une erreur est survenue."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class ProjectStats(APIView):
     
@@ -269,8 +270,7 @@ class ProjectStats(APIView):
                 return Response({"error": "Project not found"}, status=status.HTTP_404_NOT_FOUND)
             return Response({"detail": "View count updated"}, status=status.HTTP_200_OK)
         except Exception as e:
-            print(f"\n❌ Erreur {e}")
-            return Response({"detail": "Une erreur est survenue."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     def get(self, request):
         
@@ -336,7 +336,7 @@ class ProjectStats(APIView):
             return Response(stats)
         except Exception as e:
             print(f"\n❌ Error {e}")
-            return Response({"detail": "Une erreur est survenue."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # View for the Categories model
 class CategoriesView(APIView):
